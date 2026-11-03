@@ -42,6 +42,10 @@ public:
     inline static const auto YScrollScale = QStringLiteral("client/yScrollScale");
     inline static const auto XScrollScale = QStringLiteral("client/xScrollScale");
     inline static const auto LanguageSync = QStringLiteral("client/languageSync");
+    // Windows only: lock the workstation directly when the server sends Super(Win)+L.
+    // Windows ignores an injected Win+L unless the injecting process is privileged,
+    // so the client calls LockWorkStation() itself instead of relying on the keystroke.
+    inline static const auto LockOnSuperL = QStringLiteral("client/lockOnSuperL");
     inline static const auto RemoteHost = QStringLiteral("client/remoteHost");
     inline static const auto XdpClipboardRetried = QStringLiteral("client/xdpClipboardRetried");
     inline static const auto XdpRestoreToken = QStringLiteral("client/xdpRestoreToken");
@@ -281,6 +285,7 @@ private:
     , Client::InvertYScroll
     , Client::InvertXScroll
     , Client::LanguageSync
+    , Client::LockOnSuperL
     , Client::RemoteHost
     , Client::YScrollScale
     , Client::XScrollScale
@@ -382,6 +387,7 @@ private:
     , Security::CheckPeers
     , Server::EnableClipboard
     , Server::Win32KeepForeground
+    , Client::LockOnSuperL
   };
 
   // Settings saved in our State file

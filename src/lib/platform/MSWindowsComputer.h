@@ -101,6 +101,7 @@ public:
   // IKeyState overrides
   virtual void updateKeys();
   void fakeKeyDown(KeyID id, KeyModifierMask mask, KeyButton button, const std::string &lang) override;
+  void lockWorkstationOnSuperL(KeyID id, KeyModifierMask mask) const;
   bool fakeKeyRepeat(KeyID id, KeyModifierMask mask, int32_t count, KeyButton button, const std::string &lang) override;
   bool fakeKeyUp(KeyButton button) override;
   void fakeAllKeysUp() override;

@@ -723,6 +723,30 @@ void MSWindowsComputer::fakeKeyDown(KeyID id, KeyModifierMask mask, KeyButton bu
 {
   PlatformComputer::fakeKeyDown(id, mask, button, lang);
   updateMouseKeys();
+  lockWorkstationOnSuperL(id, mask);
+}
+
+void MSWindowsComputer::lockWorkstationOnSuperL(KeyID id, KeyModifierMask mask) const
+{
+  // Only as a client: the server's own Win+L is handled by the OS.
+  if (m_isPrimary || !Settings::value(Settings::Client::LockOnSuperL).toBool()) {
+    return;
+  }
+
+  static const KeyModifierMask s_matchMask =
+      KeyModifierShift | KeyModifierControl | KeyModifierAlt | KeyModifierMeta | KeyModifierSuper | KeyModifierAltGr;
+  const bool isL = (id == static_cast<KeyID>('l') || id == static_cast<KeyID>('L'));
+  if (!isL || (mask & s_matchMask) != KeyModifierSuper) {
+    return;
+  }
+
+  // The keystroke itself was already injected above (keeps the Start menu from
+  // opening on Win release); the OS usually ignores it, so lock explicitly.
+  if (LockWorkStation()) {
+    LOG_INFO("Super+L received from server, locked the workstation");
+  } else {
+    LOG_WARN("Super+L received from server but LockWorkStation failed: %d", GetLastError());
+  }
 }
 
 bool MSWindowsComputer::fakeKeyRepeat(
