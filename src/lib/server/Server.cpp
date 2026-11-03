@@ -1552,8 +1552,8 @@ void Server::loadImeKeys()
 
     ImeKey ime;
     ime.target = target;
-    if (!deskflow::KeyMap::parseModifiers(keystroke, ime.triggerMask) || !deskflow::KeyMap::parseKey(keystroke, ime.trigger) ||
-        ime.trigger == kKeyNone) {
+    if (!deskflow::KeyMap::parseModifiers(keystroke, ime.triggerMask) ||
+        !deskflow::KeyMap::parseKey(keystroke, ime.trigger) || ime.trigger == kKeyNone) {
       LOG_WARN("ignoring invalid IME keystroke in setting %s", settingKey.toUtf8().constData());
       continue;
     }
