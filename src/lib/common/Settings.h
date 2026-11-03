@@ -114,6 +114,10 @@ public:
     inline static const auto GridHeight = QStringLiteral("server/gridHeight");
     inline static const auto GridWidth = QStringLiteral("server/gridWidth");
     inline static const auto Heartbeat = QStringLiteral("server/heartbeat");
+    // keystroke (e.g. "Control+Space") that is sent to a client as the Hangul (한/영) key
+    inline static const auto ImeToggleKey = QStringLiteral("server/imeToggleKey");
+    // keystroke that is sent to a client as the Hanja (한자) key
+    inline static const auto ImeHanjaKey = QStringLiteral("server/imeHanjaKey");
     inline static const auto Protocol = QStringLiteral("server/protocol");
     inline static const auto RelativeMouseMoves = QStringLiteral("server/relativeMouseMoves");
     inline static const auto SwitchDelay = QStringLiteral("server/switchDelay");
@@ -330,6 +334,8 @@ private:
     , Server::GridHeight
     , Server::GridWidth
     , Server::Heartbeat
+    , Server::ImeHanjaKey
+    , Server::ImeToggleKey
     , Server::Protocol
     , Server::RelativeMouseMoves
     , Server::SwitchDelay

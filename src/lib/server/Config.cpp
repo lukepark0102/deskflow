@@ -1313,7 +1313,9 @@ bool ConfigReadContext::readLine(std::string &line)
     if (!line.empty()) {
       // make sure there are no invalid characters
       for (i = 0; i < line.length(); ++i) {
-        if (!isgraph(line[i]) && line[i] != ' ' && line[i] != '\t') {
+        // bytes >= 0x80 are part of a UTF-8 sequence (e.g. localized computer names)
+        const auto c = static_cast<unsigned char>(line[i]);
+        if (c < 0x80 && !isgraph(c) && c != ' ' && c != '\t') {
           throw ServerConfigReadException(*this, "invalid character %{1}", deskflow::string::sprintf("%#2x", line[i]));
         }
       }

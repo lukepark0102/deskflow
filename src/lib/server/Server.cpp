@@ -10,10 +10,12 @@
 
 #include "base/IEventQueue.h"
 #include "base/Log.h"
+#include "common/Settings.h"
 #include "deskflow/AppUtil.h"
 #include "deskflow/Computer.h"
 #include "deskflow/DeskflowException.h"
 #include "deskflow/IPlatformComputer.h"
+#include "deskflow/KeyMap.h"
 #include "deskflow/OptionTypes.h"
 #include "deskflow/PacketStreamFilter.h"
 #include "deskflow/ProtocolTypes.h"
@@ -215,6 +217,7 @@ bool Server::setConfig(const ServerConfig &config)
 
   // cut over
   processOptions();
+  loadImeKeys();
 
   // add ScrollLock as a hotkey to lock to the computer.  this was a
   // built-in feature in earlier releases and is now supported via
@@ -1532,10 +1535,63 @@ void Server::onScreensaver(bool activated)
   }
 }
 
+void Server::loadImeKeys()
+{
+  m_imeKeys.clear();
+
+  const std::pair<QString, KeyID> entries[] = {
+      {Settings::Server::ImeToggleKey, kKeyHangul},
+      {Settings::Server::ImeHanjaKey, kKeyHanja},
+  };
+
+  for (const auto &[settingKey, target] : entries) {
+    std::string keystroke = Settings::value(settingKey).toString().trimmed().toStdString();
+    if (keystroke.empty()) {
+      continue;
+    }
+
+    ImeKey ime;
+    ime.target = target;
+    if (!deskflow::KeyMap::parseModifiers(keystroke, ime.triggerMask) || !deskflow::KeyMap::parseKey(keystroke, ime.trigger) ||
+        ime.trigger == kKeyNone) {
+      LOG_WARN("ignoring invalid IME keystroke in setting %s", settingKey.toUtf8().constData());
+      continue;
+    }
+
+    LOG_INFO(
+        "IME key: %s -> %s (clients only)", deskflow::KeyMap::formatKey(ime.trigger, ime.triggerMask).c_str(),
+        deskflow::KeyMap::formatKey(target, 0).c_str()
+    );
+    m_imeKeys.push_back(ime);
+  }
+}
+
+void Server::translateImeKey(KeyID &id, KeyModifierMask &mask) const
+{
+  if (m_imeKeys.empty() || m_active == nullptr || m_active == m_primaryClient) {
+    return;
+  }
+
+  // only the "real" modifiers take part in matching; lock keys are ignored
+  static const KeyModifierMask s_matchMask =
+      KeyModifierShift | KeyModifierControl | KeyModifierAlt | KeyModifierMeta | KeyModifierSuper | KeyModifierAltGr;
+
+  for (const auto &ime : m_imeKeys) {
+    if (id == ime.trigger && (mask & s_matchMask) == (ime.triggerMask & s_matchMask)) {
+      // the client releases the held modifiers itself to reach the requested
+      // (empty) modifier state, presses the key and then restores them
+      id = ime.target;
+      mask &= ~s_matchMask;
+      return;
+    }
+  }
+}
+
 void Server::onKeyDown(KeyID id, KeyModifierMask mask, KeyButton button, const std::string &lang, const char *computers)
 {
   LOG_VERBOSE("onKeyDown id=%d mask=0x%04x button=0x%04x lang=%s", id, mask, button, lang.c_str());
   assert(m_active != nullptr);
+  translateImeKey(id, mask);
 
   // relay
   if (!m_keyboardBroadcasting && IKeyState::KeyInfo::isDefault(computers)) {
@@ -1559,6 +1615,7 @@ void Server::onKeyUp(KeyID id, KeyModifierMask mask, KeyButton button, const cha
 {
   LOG_VERBOSE("onKeyUp id=%d mask=0x%04x button=0x%04x", id, mask, button);
   assert(m_active != nullptr);
+  translateImeKey(id, mask);
 
   // relay
   if (!m_keyboardBroadcasting && IKeyState::KeyInfo::isDefault(computers)) {
@@ -1585,6 +1642,7 @@ void Server::onKeyRepeat(KeyID id, KeyModifierMask mask, int32_t count, KeyButto
        lang.c_str())
   );
   assert(m_active != nullptr);
+  translateImeKey(id, mask);
 
   // relay
   m_active->keyRepeat(id, mask, count, button, lang);

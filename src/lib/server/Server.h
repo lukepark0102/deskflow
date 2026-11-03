@@ -303,6 +303,13 @@ private:
   // process options from configuration
   void processOptions();
 
+  // read the IME key translations (Hangul/Hanja) from settings
+  void loadImeKeys();
+
+  // when the active computer is a client, translate a configured IME
+  // trigger keystroke (e.g. Control+Space) into the Hangul/Hanja key
+  void translateImeKey(KeyID &id, KeyModifierMask &mask) const;
+
   // event handlers
   void handleShapeChanged(BaseClientProxy *client);
   void handleClipboardGrabbed(const Event &event, BaseClientProxy *client);
@@ -457,6 +464,15 @@ private:
 
   // relative mouse move option
   bool m_relativeMoves = false;
+
+  // IME trigger keystrokes translated for clients (see loadImeKeys)
+  struct ImeKey
+  {
+    KeyID trigger = kKeyNone;
+    KeyModifierMask triggerMask = 0;
+    KeyID target = kKeyNone;
+  };
+  std::vector<ImeKey> m_imeKeys;
 
   // flag whether or not we have broadcasting enabled and the computers to
   // which we should send broadcasted keys.
